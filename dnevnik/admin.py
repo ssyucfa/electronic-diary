@@ -1,39 +1,33 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.models import Group
+from .utils import MixinAdmin
 
-from .models import *
+from .models import Score, Subject, StudyClass, User, Group
 
 
 # Register your models here.
 
 
-class StudyClassAdmin(admin.ModelAdmin):
+class StudyClassAdmin(MixinAdmin, admin.ModelAdmin):
+    name_of_field = 'teacher'
+    teacher = True
     prepopulated_fields = {'slug': ('name',)}
-
-    def formfield_for_dbfield(self, db_field, request, **kwargs):
-        if db_field.name == 'is_teacher':
-            return forms.ModelChoiceField(User.objects.filter(is_teacher=True))
-        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == 'students':
-                return forms.ModelMultipleChoiceField(User.objects.filter(is_teacher=False))
+            return forms.ModelMultipleChoiceField(User.objects.filter(is_teacher=False))
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
-class ScoreAdmin(admin.ModelAdmin):
-    
-    def formfield_for_foreignkey(self, db_field, request, **kwargs ):
-        if db_field.name == 'student':
-            return forms.ModelChoiceField(User.objects.filter(is_teacher=False))
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+class ScoreAdmin(MixinAdmin, admin.ModelAdmin):
+    name_of_field = 'student'
+    teacher = False
 
 
 class UserAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('first_name', 'last_name')}
 
-    #ПОЧЕМУ ТО НЕ РАБОТАЕТ, не работает потому что не берет экземляр, как я понимаю
+    # ПОЧЕМУ ТО НЕ РАБОТАЕТ, не работает потому что не берет экземляр, как я понимаю
     # def save_model(self, request, obj, form, change) -> None:
     #     obj.save()
     #     if obj.is_teacher:
@@ -53,7 +47,7 @@ class UserAdmin(admin.ModelAdmin):
 
 
 class SubjectAdmin(admin.ModelAdmin):
-    prepopulated_fields = {'slug': ('title', )}
+    prepopulated_fields = {'slug': ('title',)}
 
 
 admin.site.register(User, UserAdmin)
