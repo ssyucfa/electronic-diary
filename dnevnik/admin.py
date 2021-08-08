@@ -4,7 +4,7 @@ from .utils import MixinAdmin
 
 from .models import Score, Subject, StudyClass, User, Group
 
-
+from . import service
 # Register your models here.
 
 
@@ -39,11 +39,13 @@ class UserAdmin(admin.ModelAdmin):
     def save_related(self, request, form, formsets, change) -> None:
         super().save_related(request, form, formsets, change)
         if form.instance.is_teacher:
-            group_teacher = Group.objects.get(pk=1)
+            group_teacher = Group.objects.get(name='Teacher')
             form.instance.groups.add(group_teacher)
+            service.delete_another_group_for_user_if_has(form.instance, 'Student')
         else:
-            group_student = Group.objects.get(pk=2)
+            group_student = Group.objects.get(name='Student')
             form.instance.groups.add(group_student)
+            service.delete_another_group_for_user_if_has(form.instance, 'Teacher')
 
 
 class SubjectAdmin(admin.ModelAdmin):
