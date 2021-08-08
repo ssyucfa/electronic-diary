@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'dnevnik.middleware.SetLastVisitOnSiteMiddleware',
 ]
 
 AUTH_USER_MODEL = 'dnevnik.User'

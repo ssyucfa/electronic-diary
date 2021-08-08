@@ -90,6 +90,7 @@ class User(AbstractUser):
     slug = models.SlugField(unique=True)
     patronymic = models.CharField('Отчество', max_length=100, blank=True)
     is_teacher = models.BooleanField('Учитель?', default=False)
+    last_visit = models.DateTimeField('Последний визит', null=True)
     objects = UserManager()
 
     def __str__(self) -> str:
