@@ -1,2 +1,4 @@
-/dnevnik/__pycache__
-/mysite/__pycache__
+dnevnik/__pycache__/
+mysite/__pycache__/
+.venv/
+.vs/
