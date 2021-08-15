@@ -3,3 +3,4 @@ mysite/__pycache__/
 .venv/
 .vs/
 .idea/
+db.sqlite3
