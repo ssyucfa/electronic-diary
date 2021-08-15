@@ -5,9 +5,9 @@ from .utils import MixinAdmin
 from .models import Score, Subject, StudyClass, User, Group
 
 from . import service
-# Register your models here.
 
 
+@admin.register(StudyClass)
 class StudyClassAdmin(MixinAdmin, admin.ModelAdmin):
     name_of_field = 'teacher'
     teacher = True
@@ -19,11 +19,13 @@ class StudyClassAdmin(MixinAdmin, admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
+@admin.register(Score)
 class ScoreAdmin(MixinAdmin, admin.ModelAdmin):
     name_of_field = 'student'
     teacher = False
 
 
+@admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('first_name', 'last_name')}
 
@@ -48,11 +50,7 @@ class UserAdmin(admin.ModelAdmin):
             service.delete_another_group_for_user_if_has(form.instance, 'Teacher')
 
 
+@admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
 
-
-admin.site.register(User, UserAdmin)
-admin.site.register(Subject, SubjectAdmin)
-admin.site.register(StudyClass, StudyClassAdmin)
-admin.site.register(Score, ScoreAdmin)
