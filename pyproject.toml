@@ -8,6 +8,7 @@ authors = ["Иван Патин"]
 python = "^3.8"
 Django = "^3.2.6"
 transliterate = "^1.10.2"
+django-reverse-admin = "^2.9.6"
 
 [tool.poetry.dev-dependencies]
 

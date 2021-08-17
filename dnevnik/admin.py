@@ -1,8 +1,12 @@
 from django import forms
 from django.contrib import admin
+
+from django_reverse_admin import ReverseModelAdmin
+
+
 from .utils import MixinAdmin
 
-from .models import Score, Subject, StudyClass, User, Group
+from .models import Score, Subject, StudyClass, User, Group, Profile
 
 from . import service
 
@@ -15,7 +19,7 @@ class StudyClassAdmin(MixinAdmin, admin.ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == 'students':
-            return forms.ModelMultipleChoiceField(User.objects.filter(is_teacher=False))
+            return forms.ModelMultipleChoiceField(User.objects.filter(profile__is_teacher=False))
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
@@ -26,21 +30,16 @@ class ScoreAdmin(MixinAdmin, admin.ModelAdmin):
 
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(ReverseModelAdmin):
     prepopulated_fields = {'slug': ('first_name', 'last_name')}
-
-    # ПОЧЕМУ ТО НЕ РАБОТАЕТ, не работает потому что не берет экземляр, как я понимаю
-    # def save_model(self, request, obj, form, change) -> None:
-    #     obj.save()
-    #     if obj.is_teacher:
-    #         print(obj.id)
-    #         group = Group.objects.get(pk=1)
-    #         group.user_set.add(obj)
-    #     return super().save_model(request, obj, form, change)
+    inline_type = 'tabular'
+    inline_reverse = [
+        ('profile', {'fields': ['age', 'patronymic', 'is_teacher']})
+    ]
 
     def save_related(self, request, form, formsets, change) -> None:
         super().save_related(request, form, formsets, change)
-        if form.instance.is_teacher:
+        if form.instance.profile.is_teacher:
             group_teacher = Group.objects.get(name='Teacher')
             form.instance.groups.add(group_teacher)
             service.delete_another_group_for_user_if_has(form.instance, 'Student')

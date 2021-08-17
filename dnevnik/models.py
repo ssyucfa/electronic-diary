@@ -1,10 +1,12 @@
+from django.contrib.auth import password_validation
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.text import slugify
 from django.contrib.auth.models import Group
-from django.dispatch import receiver
-from django.db.models.signals import post_save
-from django.contrib.auth.validators import UnicodeUsernameValidator
 
 from transliterate import get_translit_function
 
@@ -87,36 +89,63 @@ class User(AbstractUser):
         max_length=150, unique=True, validators=[UnicodeUsernameValidator()],
         verbose_name='username'
     )
-    age = models.PositiveSmallIntegerField('Сколько лет', null=True)
-    slug = models.SlugField(unique=True)
-    patronymic = models.CharField('Отчество', max_length=100, blank=True)
-    is_teacher = models.BooleanField('Учитель?', default=False)
+    profile = models.OneToOneField('Profile', on_delete=models.CASCADE, blank=True, null=True)
     last_visit = models.DateTimeField('Последний визит', null=True, blank=True)
+    slug = models.SlugField(blank=True)
     objects = UserManager()
 
     def __str__(self) -> str:
-        if self.is_teacher:
-            return f"{self.first_name} {self.patronymic}"
+        if self.profile.is_teacher:
+            return f"{self.first_name} {self.last_name} {self.profile.patronymic}"
         return f"{self.first_name} {self.last_name}"
 
     def save(self, *args, **kwargs):
-        if self.is_teacher:
-            self.slug = gen_slug_for_teacher(self.first_name, self.patronymic)
+        if self.password:
+            if len(self.password) == 88:
+                pass
+            else:
+                self.password = make_password(self.password)
+
+        if self.profile.is_teacher:
+            self.slug = gen_slug_for_teacher(
+                self.first_name, self.profile.patronymic
+            )
+
         if not self.username:
-            self.username = gen_slug(self.last_name) + gen_slug(self.first_name[0]) + gen_slug(self.patronymic[0])
+            self.username = gen_slug(
+                self.last_name
+            ) + gen_slug(self.first_name[0]) + gen_slug(
+                self.profile.patronymic[0]
+            )
         return super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['first_name', 'last_name']
 
 
-# ПОЧЕМУ ТО НЕ РАБОТАЕТ, не работает потому что не берет экземляр, как я понимаю
-# @receiver(post_save, sender=User)
-# def add_admin_permission(sender, instance, created, **kwargs):
-#     if created:
-#         group = Group.objects.get(pk=1)
-#         group.user_set.add(instance)
-#         print(instance.groups.all())
+@receiver(post_save, sender=User)
+def add_admin_permission(sender, instance, created, **kwargs):
+    if created:
+        if instance.profile.is_teacher:
+            instance.slug = gen_slug_for_teacher(
+                instance.first_name, instance.profile.patronymic
+            )
+        if not instance.username:
+            instance.username = gen_slug(
+                instance.last_name
+            ) + gen_slug(instance.first_name[0]) + gen_slug(
+                instance.profile.patronymic[0]
+            )
+        if instance.password:
+            instance.password = make_password(instance.password)
+
+
+class Profile(models.Model):
+
+    age = models.PositiveSmallIntegerField('Сколько лет', null=True)
+    patronymic = models.CharField('Отчество', max_length=100, blank=True)
+    is_teacher = models.BooleanField('Учитель?', default=False)
+
 
 class StudyClass(models.Model):
     name = models.CharField('Название класса', unique=True, max_length=10)

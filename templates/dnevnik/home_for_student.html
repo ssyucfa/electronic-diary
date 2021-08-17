@@ -1,0 +1,10 @@
+{% extends 'dnevnik/base.html' %}
+{% block title %} Привет {% endblock %}
+{% block content %}
+    {% for score in scores %}
+         <h2>{{ score.subject__title }}</h2>
+         <h3>{{ score.score }}</h3>
+         <p>{{ score.comment }}</p>
+         <p>{{ score.date|date:"SHORT_DATE_FORMAT" }}</p>
+    {% endfor %}
+{% endblock %}

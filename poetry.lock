@@ -27,6 +27,14 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-reverse-admin"
+version = "2.9.6"
+description = ""
+category = "main"
+optional = false
+python-versions = ">=3"
+
+[[package]]
 name = "pytz"
 version = "2021.1"
 description = "World timezone definitions, modern and historical"
@@ -64,7 +72,7 @@ six = ">=1.1.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "4011aa0239a6a939ca29b1c9f83081b678e026d94d0c3ee7ba532fcaa47d8fdf"
+content-hash = "298f9f00777b24f00991760e825fa62a39ec1c6f0b1fd3b2f32994ac1839357f"
 
 [metadata.files]
 asgiref = [
@@ -74,6 +82,9 @@ asgiref = [
 django = [
     {file = "Django-3.2.6-py3-none-any.whl", hash = "sha256:7f92413529aa0e291f3be78ab19be31aefb1e1c9a52cd59e130f505f27a51f13"},
     {file = "Django-3.2.6.tar.gz", hash = "sha256:f27f8544c9d4c383bbe007c57e3235918e258364577373d4920e9162837be022"},
+]
+django-reverse-admin = [
+    {file = "django_reverse_admin-2.9.6.zip", hash = "sha256:3c26d7a93181e8f11b1c81f83251f238c566bc7ebea2873520269c949116f0d9"},
 ]
 pytz = [
     {file = "pytz-2021.1-py2.py3-none-any.whl", hash = "sha256:eb10ce3e7736052ed3623d49975ce333bcd712c7bb19a58b9e2089d4057d0798"},
