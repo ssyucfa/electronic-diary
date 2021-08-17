@@ -21,13 +21,13 @@ class HomeView(LoginRequiredMixin, View):
                           context={'class': class_})
 
         elif not request.user.profile.is_teacher:
-            scores = Score.objects.filter(student__id=request.user.id).select_related('subject').values(
-                'score', 'comment',
-                'date', 'subject__title', )
-            print(scores)
+            # scores = Score.objects.filter(student__id=request.user.id).select_related('subject').values(
+            #     'score', 'comment',
+            #     'date', 'subject__title', )
+            subject = Subject.objects.all()
             return render(request,
                           'dnevnik/home_for_student.html',
-                          context={'scores': scores})
+                          context={'subject': subject})
 
 
 class ClassesList(TeacherRequiredMixin, ListView):
