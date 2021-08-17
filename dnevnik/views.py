@@ -3,6 +3,7 @@ from django.views.generic import View, ListView
 from django.shortcuts import render
 
 from .models import User, Subject, StudyClass, Score
+from .utils import TeacherRequiredMixin
 
 
 class HomeView(LoginRequiredMixin, View):
@@ -27,6 +28,13 @@ class HomeView(LoginRequiredMixin, View):
                           context={'scores': scores})
 
 
-class ClassesList(ListView):
-    pass
+class ClassesList(TeacherRequiredMixin, ListView):
+    model = StudyClass
+    queryset = StudyClass.objects.all().select_related(
+        'teacher'
+    ).values(
+        'name', 'teacher__first_name',
+        'teacher__profile__patronymic'
+    )
+
 

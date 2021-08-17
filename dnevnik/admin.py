@@ -3,7 +3,6 @@ from django.contrib import admin
 
 from django_reverse_admin import ReverseModelAdmin
 
-
 from .utils import MixinAdmin
 
 from .models import Score, Subject, StudyClass, User, Group, Profile
