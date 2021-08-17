@@ -6,6 +6,8 @@ from .models import User, Subject, StudyClass, Score
 from .utils import TeacherRequiredMixin
 
 
+# Для авг оценки, вот так вот Score.objects.filter(student__username='patinik', subject__id=1).aggregate(
+# avg_score=models.Avg('score'))
 class HomeView(LoginRequiredMixin, View):
     login_url = 'login'
 

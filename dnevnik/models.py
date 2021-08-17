@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
+from django.db.models import FloatField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.text import slugify
@@ -43,19 +44,12 @@ class Subject(models.Model):
     #     return super().save(*args, **kwargs)
 
 
-class ScoreQuerySet(models.QuerySet):
-
-    def avg_score(self):
-        return self.aggregate(models.Avg('score'))
-
-
 class Score(models.Model):
     score = models.PositiveSmallIntegerField('Оценка')
     comment = models.TextField('Комментарий к оценке', blank=True)
     date = models.DateTimeField('Дата оценки')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='scores')
     student = models.ForeignKey('User', on_delete=models.CASCADE, related_name='scores')
-    objects = ScoreQuerySet().as_manager()
 
     def __str__(self) -> str:
         return f"{self.score}-{self.student.first_name}-{self.date.date()}"
@@ -64,10 +58,10 @@ class Score(models.Model):
 class UserQuerySet(models.QuerySet):
 
     def teachers(self):
-        return self.filter(is_teacher=True)
+        return self.filter(profile__is_teacher=True)
 
     def students(self):
-        return self.filter(is_teacher=False)
+        return self.filter(profile__is_teacher=False)
 
 
 class UserManager(UserManager):
@@ -91,7 +85,7 @@ class User(AbstractUser):
     )
     profile = models.OneToOneField('Profile', on_delete=models.CASCADE, blank=True, null=True)
     last_visit = models.DateTimeField('Последний визит', null=True, blank=True)
-    slug = models.SlugField(blank=True)
+    slug = models.SlugField(unique=True)
     objects = UserManager()
 
     def __str__(self) -> str:
