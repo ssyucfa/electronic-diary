@@ -1,0 +1,14 @@
+{% extends 'dnevnik/base.html' %}
+{% block title %} Школьник {% endblock %}
+{% block content %}
+    <h1>Ученик: {{ student.first_name }} {{ student.last_name }}</h1>
+
+    {% for subject in subjects %}
+        <h2>{{ subject.title }}</h2>
+        {% for score in scores %}
+            {% if score.subject.title == subject.title %}
+                <span>{{ score.score }},  </span>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+{% endblock %}

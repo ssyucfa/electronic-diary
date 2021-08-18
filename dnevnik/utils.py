@@ -17,14 +17,18 @@ class MixinAdmin:
 
 
 class TeacherRequiredMixin(AccessMixin):
+    login_url = 'login'
+
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated and not request.user.profile.is_teacher:
+        if not request.user.is_authenticated or not request.user.profile.is_teacher:
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
 
 
 class StudentRequiredMixin(AccessMixin):
+    login_url = 'login'
+
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated and request.user.profile.is_teacher:
+        if not request.user.is_authenticated or request.user.profile.is_teacher:
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)

@@ -1,11 +1,10 @@
-from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
-from django.db.models import FloatField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth.models import Group
 
@@ -22,12 +21,12 @@ def gen_slug(text):
     return slugify(translit_ru(text, reversed=True))
 
 
-def gen_slug_for_teacher(first_name, patronymic):
+def gen_slug_in_two_words(first_name, some_word):
     """Генерирует слаг для учителя"""
     slug = ''
     slug += translit_ru(first_name, reversed=True)
     slug += '-'
-    slug += translit_ru(patronymic, reversed=True)
+    slug += translit_ru(some_word, reversed=True)
 
     return slugify(slug)
 
@@ -47,7 +46,7 @@ class Subject(models.Model):
 class Score(models.Model):
     score = models.PositiveSmallIntegerField('Оценка')
     comment = models.TextField('Комментарий к оценке', blank=True)
-    date = models.DateTimeField('Дата оценки')
+    date = models.DateTimeField('Дата оценки', auto_now_add=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='scores')
     student = models.ForeignKey('User', on_delete=models.CASCADE, related_name='scores')
 
@@ -86,6 +85,7 @@ class User(AbstractUser):
     profile = models.OneToOneField('Profile', on_delete=models.CASCADE, blank=True, null=True)
     last_visit = models.DateTimeField('Последний визит', null=True, blank=True)
     slug = models.SlugField(unique=True)
+    is_in_class = models.BooleanField(default=False)
     objects = UserManager()
 
     def __str__(self) -> str:
@@ -100,10 +100,7 @@ class User(AbstractUser):
             else:
                 self.password = make_password(self.password)
 
-        if self.profile.is_teacher:
-            self.slug = gen_slug_for_teacher(
-                self.first_name, self.profile.patronymic
-            )
+        self.__gen_slug()
 
         if not self.username:
             self.username = gen_slug(
@@ -113,29 +110,65 @@ class User(AbstractUser):
             )
         return super().save(*args, **kwargs)
 
+    def __gen_slug(self):
+        if self.profile.is_teacher:
+            self.slug = gen_slug_in_two_words(
+                self.first_name, self.profile.patronymic
+            )
+        else:
+            self.slug = gen_slug_in_two_words(self.first_name,
+                                              self.last_name)
+
+    @staticmethod
+    def _create_data(count=20, locale='ru'):
+        from mimesis import Person
+        from random import choice
+
+        person = Person(locale)
+
+        for _ in range(count):
+            profile = Profile.objects.create(age=person.age(),
+                                             patronymic=person.surname(),
+                                             is_teacher=choice([True, False]))
+            user = User(email=person.email(),
+                        username=person.username(),
+                        first_name=person.first_name(),
+                        last_name=person.last_name(),
+                        password=person.password(),
+                        profile=profile,
+                        )
+            user.save()
+            user.groups.add(
+                Group.objects.get(name='Teacher')
+                if user.profile.is_teacher else
+                Group.objects.get(name='Student')
+                )
+
+    def get_absolute_url(self):
+        return reverse('student', kwargs={'slug': self.slug})
+
     class Meta:
         ordering = ['first_name', 'last_name']
 
 
-@receiver(post_save, sender=User)
-def add_admin_permission(sender, instance, created, **kwargs):
-    if created:
-        if instance.profile.is_teacher:
-            instance.slug = gen_slug_for_teacher(
-                instance.first_name, instance.profile.patronymic
-            )
-        if not instance.username:
-            instance.username = gen_slug(
-                instance.last_name
-            ) + gen_slug(instance.first_name[0]) + gen_slug(
-                instance.profile.patronymic[0]
-            )
-        if instance.password:
-            instance.password = make_password(instance.password)
+# @receiver(post_save, sender=User)
+# def add_admin_permission(sender, instance, created, **kwargs):
+#     if created:
+#         if instance.profile.is_teacher:
+#             instance.slug = gen_slug_in_two_words(
+#                 instance.first_name, instance.profile.patronymic
+#             )
+#         if not instance.username:
+#             instance.username = gen_slug(
+#                 instance.last_name
+#             ) + gen_slug(instance.first_name[0]) + gen_slug(
+#                 instance.profile.patronymic[0]
+#             )
+#         if instance.password:
+#             instance.password = make_password(instance.password)
 
 
 class Profile(models.Model):
-
     age = models.PositiveSmallIntegerField('Сколько лет', null=True)
     patronymic = models.CharField('Отчество', max_length=100, blank=True)
     is_teacher = models.BooleanField('Учитель?', default=False)
@@ -154,6 +187,20 @@ class StudyClass(models.Model):
     def count_students(self):
         return self.students.count()
 
+    def get_absolute_url(self):
+        return reverse('class', kwargs={'pk': self.pk})
+
     # def save(self, *args, **kwargs):
-    #     self.slug = gen_slug(self.name)
+    #     self.students.is_in_class = True
+    #     self.teacher.is_in_class = True
     #     return super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=StudyClass)
+def update_in_class_for_persons(sender, instance, **kwargs):
+    class_ = StudyClass.objects.prefetch_related('students').get(name=instance)
+    for student in class_.students.all():
+        student.is_in_class = True
+        student.save()
+    class_.teacher.is_in_class = True
+    class_.teacher.save()

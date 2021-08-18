@@ -1,7 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import View, ListView
-from django.shortcuts import render
+from django.views.generic import View, ListView, DetailView, CreateView
+from django.shortcuts import render, redirect
 
+from .forms import ScoreAddForm
 from .models import User, Subject, StudyClass, Score
 from .utils import TeacherRequiredMixin
 
@@ -13,12 +14,13 @@ class HomeView(LoginRequiredMixin, View):
 
     def get(self, request):
         if request.user.profile.is_teacher:
-            class_ = StudyClass.objects.get(
-                teacher_id=request.user.id
-            ).values('name', )
+            class_ = StudyClass.objects.filter(
+                teacher=request.user.id).prefetch_related(
+                'students')
+
             return render(request,
                           'dnevnik/home_for_teacher.html',
-                          context={'class': class_})
+                          context={'myclasses': class_})
 
         elif not request.user.profile.is_teacher:
             # scores = Score.objects.filter(student__id=request.user.id).select_related('subject').values(
@@ -32,11 +34,61 @@ class HomeView(LoginRequiredMixin, View):
 
 class ClassesList(TeacherRequiredMixin, ListView):
     model = StudyClass
-    queryset = StudyClass.objects.all().select_related(
-        'teacher'
-    ).values(
-        'name', 'teacher__first_name',
-        'teacher__profile__patronymic'
-    )
+    queryset = StudyClass.objects.prefetch_related(
+        'students').select_related('teacher', 'teacher__profile')
+    template_name = 'dnevnik/classes_list.html'
+    context_object_name = 'classes'
 
 
+class ClassDetail(TeacherRequiredMixin, DetailView):
+    model = StudyClass
+    queryset = StudyClass.objects.all()
+    template_name = 'dnevnik/class_detail.html'
+    context_object_name = 'class'
+
+    def get_queryset(self):
+        return self.queryset.filter(
+            pk=self.kwargs['pk']).prefetch_related(
+            'students').select_related('teacher__profile', 'teacher')
+
+
+class StudentDetail(TeacherRequiredMixin, DetailView):
+    model = User
+    template_name = 'dnevnik/student_detail.html'
+    context_object_name = 'student'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['scores'] = Score.objects.filter(
+            student__slug=self.kwargs['slug']).select_related(
+            'student',
+            'subject',
+        )
+        context['subjects'] = Subject.objects.all()
+        return context
+
+
+class ScoreAddView(TeacherRequiredMixin, View):
+    def get(self, request, slug):
+        teachers = User.objects.get(slug=slug).class_for_student.all().select_related('teacher').values_list('teacher')[0]
+        if request.user.id not in teachers:
+            return redirect('home')
+        form = ScoreAddForm()
+        return render(
+            request,
+            'dnevnik/add_score.html',
+            context={'form': form}
+        )
+
+    def post(self, request, slug):
+        form = ScoreAddForm(request.POST)
+        if form.is_valid():
+            score = form.save(commit=False)
+            score.student = User.objects.get(slug=slug)
+            score.save()
+            return redirect('home')
+        return render(
+            request,
+            'dnevnik/add_score.html',
+            context={'form': form}
+        )

@@ -1,10 +1,12 @@
 {% extends 'dnevnik/base.html' %}
-{% block title %} Мои классы {% endblock %}
+{% block title %} Классы {% endblock %}
 {% block content %}
-    {% for class in myclasses %}
+    {% for class in classes %}
         <h2><a href="{{ class.get_absolute_url }}">{{ class.name }}</a></h2>
+        <p>Учитель: {{ class.teacher.first_name }} {{ class.teacher.profile.patronymic }}</p>
         <p>Учеников: {{ class.count_students }}</p>
         <br>
     {% endfor %}
+
 
 {% endblock %}

@@ -3,6 +3,7 @@ from django.contrib import admin
 
 from django_reverse_admin import ReverseModelAdmin
 
+
 from .utils import MixinAdmin
 
 from .models import Score, Subject, StudyClass, User, Group, Profile
@@ -18,7 +19,7 @@ class StudyClassAdmin(MixinAdmin, admin.ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == 'students':
-            return forms.ModelMultipleChoiceField(User.objects.filter(profile__is_teacher=False))
+            return forms.ModelMultipleChoiceField(User.objects.filter(profile__is_teacher=False, is_in_class=False))
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 

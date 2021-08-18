@@ -1,0 +1,10 @@
+{% extends 'dnevnik/base.html' %}
+{% block title %} Оценка ставить, класс{% endblock %}
+{% block content %}
+    <form action="" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Поставить</button>
+    </form>
+
+{% endblock %}

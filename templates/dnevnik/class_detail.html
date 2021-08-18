@@ -1,0 +1,14 @@
+{% extends 'dnevnik/base.html' %}
+{% block title %} Классы {% endblock %}
+{% block content %}
+    <h1>{{ class.name }}</h1>
+    <h2>Учитель: {{ class.teacher.first_name }} {{ class.teacher.profile.patronymic }}</h2>
+    <br>
+    {% for student in class.students.all %}
+        <h3><a href="{{ student.get_absolute_url }}">{{ student.first_name }} {{ student.last_name }}</a></h3>
+        {% if request.user == class.teacher %}
+        <p><a href={% url 'score_add' student.slug %}>Поставить оценку</a></p>
+        {% endif %}
+        <br>
+    {% endfor %}
+{% endblock %}
