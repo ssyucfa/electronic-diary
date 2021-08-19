@@ -17,7 +17,7 @@ class MixinAdmin:
 
 
 class TeacherRequiredMixin(AccessMixin):
-    login_url = 'login'
+    login_url = 'home'
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.profile.is_teacher:
@@ -26,7 +26,7 @@ class TeacherRequiredMixin(AccessMixin):
 
 
 class StudentRequiredMixin(AccessMixin):
-    login_url = 'login'
+    login_url = 'home'
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or request.user.profile.is_teacher:

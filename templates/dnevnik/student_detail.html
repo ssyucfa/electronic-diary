@@ -5,6 +5,12 @@
 
     {% for subject in subjects %}
         <h2>{{ subject.title }}</h2>
+        {% for avg_score in avg_scores %}
+            {% if avg_score.subject__title == subject.title %}
+                <h3>Средняя оценка: {{ avg_score.avg_score }}</h3>
+            {% endif %}
+
+        {% endfor %}
         {% for score in scores %}
             {% if score.subject.title == subject.title %}
                 <span>{{ score.score }},  </span>

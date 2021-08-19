@@ -1,22 +1,23 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import models
 from django.views.generic import View, ListView, DetailView, CreateView
 from django.shortcuts import render, redirect
 
 from .forms import ScoreAddForm
 from .models import User, Subject, StudyClass, Score
-from .utils import TeacherRequiredMixin
+from .utils import TeacherRequiredMixin, StudentRequiredMixin
 
 
-# Для авг оценки, вот так вот Score.objects.filter(student__username='patinik', subject__id=1).aggregate(
-# avg_score=models.Avg('score'))
 class HomeView(LoginRequiredMixin, View):
     login_url = 'login'
 
     def get(self, request):
         if request.user.profile.is_teacher:
             class_ = StudyClass.objects.filter(
-                teacher=request.user.id).prefetch_related(
-                'students')
+                teacher=request.user.id
+            ).prefetch_related(
+                'students'
+            )
 
             return render(request,
                           'dnevnik/home_for_teacher.html',
@@ -26,16 +27,19 @@ class HomeView(LoginRequiredMixin, View):
             # scores = Score.objects.filter(student__id=request.user.id).select_related('subject').values(
             #     'score', 'comment',
             #     'date', 'subject__title', )
-            subject = Subject.objects.all()
+            subjects = Subject.objects.all()
             return render(request,
                           'dnevnik/home_for_student.html',
-                          context={'subject': subject})
+                          context={'subjects': subjects})
 
 
 class ClassesList(TeacherRequiredMixin, ListView):
     model = StudyClass
     queryset = StudyClass.objects.prefetch_related(
-        'students').select_related('teacher', 'teacher__profile')
+        'students').select_related(
+        'teacher',
+        'teacher__profile'
+    )
     template_name = 'dnevnik/classes_list.html'
     context_object_name = 'classes'
 
@@ -49,7 +53,10 @@ class ClassDetail(TeacherRequiredMixin, DetailView):
     def get_queryset(self):
         return self.queryset.filter(
             pk=self.kwargs['pk']).prefetch_related(
-            'students').select_related('teacher__profile', 'teacher')
+            'students').select_related(
+            'teacher__profile',
+            'teacher'
+        )
 
 
 class StudentDetail(TeacherRequiredMixin, DetailView):
@@ -64,13 +71,22 @@ class StudentDetail(TeacherRequiredMixin, DetailView):
             'student',
             'subject',
         )
+        context['avg_scores'] = Score.objects.filter(
+            student__slug=self.kwargs['slug']).select_related(
+            'subject', 'student').values(
+            'subject__title').annotate(
+            avg_score=models.Avg('score'))
         context['subjects'] = Subject.objects.all()
         return context
 
 
 class ScoreAddView(TeacherRequiredMixin, View):
     def get(self, request, slug):
-        teachers = User.objects.get(slug=slug).class_for_student.all().select_related('teacher').values_list('teacher')[0]
+        teachers = User.objects.get(
+            slug=slug
+        ).class_for_student.all().select_related(
+            'teacher'
+        ).values_list('teacher')[0]
         if request.user.id not in teachers:
             return redirect('home')
         form = ScoreAddForm()
@@ -92,3 +108,32 @@ class ScoreAddView(TeacherRequiredMixin, View):
             'dnevnik/add_score.html',
             context={'form': form}
         )
+
+
+class SubjectDetail(StudentRequiredMixin, View):
+
+    def get(self, request, subject_slug):
+        scores = Score.objects.filter(
+            student_id=request.user.id,
+            subject__slug=subject_slug
+        ).select_related(
+            'student',
+            'subject',
+        )
+        avg_score = Score.objects.filter(
+            student_id=request.user.id,
+            subject__slug=subject_slug
+        ).select_related(
+            'subject',
+            'student'
+        ).aggregate(
+            avg_score=models.Avg('score'))
+        subject = Subject.objects.get(slug=subject_slug)
+
+        context = {
+            'scores': scores,
+            'avg_score': avg_score,
+            'subject': subject,
+        }
+
+        return render(request, 'dnevnik/subject_detail.html', context=context)

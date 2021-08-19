@@ -2,6 +2,6 @@
 {% block title %} Привет {% endblock %}
 {% block content %}
     {% for subject in subjects %}
-        <h2><a href="#">{{ subject.title }}</a></h2>
+        <h2><a href="{{ subject.get_absolute_url }}">{{ subject.title }}</a></h2>
     {% endfor %}
 {% endblock %}

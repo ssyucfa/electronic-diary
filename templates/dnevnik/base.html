@@ -5,6 +5,10 @@
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
+    <h3><a href="{% url 'home' %}">Home</a></h3>
+    {% if request.user.is_authenticated %}
+        <h3><a href="{% url 'logout' %}">Logout</a></h3>
+    {% endif %}
     {% block content %}
     {% endblock %}
 </body>

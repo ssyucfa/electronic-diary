@@ -1,0 +1,10 @@
+{% extends 'dnevnik/base.html' %}
+{% block title %} Предмет {% endblock %}
+{% block content %}
+    <h1>Мои оценки</h1>
+    <h2>Предмет: {{ subject.title }}</h2>
+    <h3>Средняя оценка: {{ avg_score.avg_score }}</h3>
+    {% for score in scores %}
+        <span>{{ score.score }}, </span>
+    {% endfor %}
+{% endblock %}

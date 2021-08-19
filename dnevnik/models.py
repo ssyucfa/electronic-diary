@@ -42,6 +42,9 @@ class Subject(models.Model):
     #     self.slug = gen_slug(self.title)
     #     return super().save(*args, **kwargs)
 
+    def get_absolute_url(self):
+        return reverse('subject', kwargs={'subject_slug': self.slug})
+
 
 class Score(models.Model):
     score = models.PositiveSmallIntegerField('Оценка')

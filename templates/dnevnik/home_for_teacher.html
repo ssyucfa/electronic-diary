@@ -1,6 +1,7 @@
 {% extends 'dnevnik/base.html' %}
 {% block title %} Мои классы {% endblock %}
 {% block content %}
+    <h3><a href="{% url 'classes' %}">Classes</a></h3>
     {% for class in myclasses %}
         <h2><a href="{{ class.get_absolute_url }}">{{ class.name }}</a></h2>
         <p>Учеников: {{ class.count_students }}</p>

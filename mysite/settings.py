@@ -61,6 +61,9 @@ AUTH_USER_MODEL = 'dnevnik.User'
 
 LOGIN_REDIRECT_URL = 'home'
 
+LOGOUT_REDIRECT_URL = 'home'
+
+
 ROOT_URLCONF = 'mysite.urls'
 
 TEMPLATES = [
