@@ -4,3 +4,4 @@ mysite/__pycache__/
 .vs/
 .idea/
 db.sqlite3
+.env
