@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models
 from django.views.generic import View, ListView, DetailView, CreateView
@@ -7,8 +9,12 @@ from .forms import ScoreAddForm
 from .models import User, Subject, StudyClass, Score
 from .utils import TeacherRequiredMixin, StudentRequiredMixin
 
+logger = logging.getLogger(__name__)
+
 
 class HomeView(LoginRequiredMixin, View):
+    """Начальная вьюха,
+     для ученика одна, для учителя другая"""
     login_url = 'login'
 
     def get(self, request):
@@ -18,7 +24,6 @@ class HomeView(LoginRequiredMixin, View):
             ).prefetch_related(
                 'students'
             )
-
             return render(request,
                           'dnevnik/home_for_teacher.html',
                           context={'myclasses': class_})
@@ -28,12 +33,16 @@ class HomeView(LoginRequiredMixin, View):
             #     'score', 'comment',
             #     'date', 'subject__title', )
             subjects = Subject.objects.all()
-            return render(request,
-                          'dnevnik/home_for_student.html',
-                          context={'subjects': subjects})
+
+            return render(
+                request,
+                'dnevnik/home_for_student.html',
+                context={'subjects': subjects}
+            )
 
 
 class ClassesList(TeacherRequiredMixin, ListView):
+    """Все классы, только для учителя"""
     model = StudyClass
     queryset = StudyClass.objects.prefetch_related(
         'students').select_related(
@@ -45,6 +54,7 @@ class ClassesList(TeacherRequiredMixin, ListView):
 
 
 class ClassDetail(TeacherRequiredMixin, DetailView):
+    """Детали каждого класса, только для учителя"""
     model = StudyClass
     queryset = StudyClass.objects.all()
     template_name = 'dnevnik/class_detail.html'
@@ -60,6 +70,8 @@ class ClassDetail(TeacherRequiredMixin, DetailView):
 
 
 class StudentDetail(TeacherRequiredMixin, DetailView):
+    """Ученик детально,
+     показываются все оценки, только для учителя"""
     model = User
     template_name = 'dnevnik/student_detail.html'
     context_object_name = 'student'
@@ -81,6 +93,10 @@ class StudentDetail(TeacherRequiredMixin, DetailView):
 
 
 class ScoreAddView(TeacherRequiredMixin, View):
+    """Установка оценки для ученика,
+     ученику можно установить оценку только если ты его учителя,
+      только для учителя"""
+
     def get(self, request, slug):
         teachers = User.objects.get(
             slug=slug
@@ -111,6 +127,8 @@ class ScoreAddView(TeacherRequiredMixin, View):
 
 
 class SubjectDetail(StudentRequiredMixin, View):
+    """Каждый урок отдельно,
+     показываются для каждого урока, только для ученика"""
 
     def get(self, request, subject_slug):
         scores = Score.objects.filter(

@@ -5,7 +5,8 @@ from .models import User
 
 
 class SetLastVisitOnSiteMiddleware(MiddlewareMixin):
-    """Ставит пользователю, который зашел на сайт, последнее посещение сайта"""
+    """С каждым входом на сайт
+    пользователю будет ставиться последний вход"""
     def process_response(self, request, response):
         if request.user.is_authenticated:
             User.objects.filter(pk=request.user.pk).update(last_visit=timezone.now())
